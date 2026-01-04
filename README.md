@@ -18,7 +18,7 @@ A Single Producer Single Consumer (SPSC) lock-free ring buffer for Go. Zero-allo
 
 ## Benchmark Results
 
-Benchmarks comparing grin vs Go channels vs `container/ring` (Apple M1 Pro, Go 1.23):
+Benchmarks comparing grin vs Go channels vs `container/ring` (Apple M1 Pro, Go 1.25.5):
 
 ```
 BenchmarkGrin_Push-8             	97138131	   11.96 ns/op	       0 B/op	       0 allocs/op
