@@ -44,6 +44,7 @@ package main
 
 import (
     "fmt"
+
     "github.com/andrewwormald/grin"
 )
 
