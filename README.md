@@ -37,83 +37,6 @@ BenchmarkChannel_FillDrain-8     	  101649	   11808 ns/op	       0 B/op	       0
 - **grin vs container/ring**: Slower for sequential bulk operations (4x), but grin is concurrent-safe for SPSC and tracks buffer fullness. Different use cases—container/ring has no atomics overhead but isn't thread-safe.
 - **Zero allocations**: grin allocates nothing during operation, container/ring allocates on every value assignment
 
-## Usage
-
-```go
-package main
-
-import (
-    "fmt"
-    "runtime"
-    "time"
-
-    "github.com/andrewwormald/grin"
-)
-
-func main() {
-    // Create a ring buffer with capacity of 1024 (must be power of 2)
-    buf := grin.New[int](1024)
-
-    // Producer goroutine with backpressure handling
-    go func() {
-        for i := 0; i < 100; i++ {
-            for !buf.Push(i) {
-                // Buffer full - yield to scheduler instead of busy-wait
-                runtime.Gosched()
-            }
-        }
-    }()
-
-    // Consumer goroutine
-    go func() {
-        for {
-            if val, ok := buf.Pop(); ok {
-                fmt.Println(val)
-            } else {
-                // Buffer empty - yield to scheduler
-                runtime.Gosched()
-            }
-        }
-    }()
-}
-```
-
-### Backpressure Strategies
-
-When the buffer is full, avoid busy-waiting which wastes CPU cycles. Choose a strategy based on your latency requirements:
-
-```go
-// Strategy 1: Yield to scheduler (low CPU, microsecond latency)
-for !buf.Push(item) {
-    runtime.Gosched()
-}
-
-// Strategy 2: Exponential backoff (balanced approach)
-backoff := time.Nanosecond
-for !buf.Push(item) {
-    time.Sleep(backoff)
-    backoff = min(backoff*2, time.Millisecond)
-}
-
-// Strategy 3: Hybrid (spin briefly, then yield)
-attempts := 0
-for !buf.Push(item) {
-    if attempts < 100 {
-        // Spin for lowest latency
-        attempts++
-    } else {
-        // Yield after threshold
-        runtime.Gosched()
-    }
-}
-
-// Strategy 4: Drop or handle differently (for real-time systems)
-if !buf.Push(item) {
-    // Log drop, sample, or handle overflow
-    handleBackpressure(item)
-}
-```
-
 ## When to Use SPSC Ring Buffers (grin)
 
 SPSC ring buffers are ideal for **high-performance, low-latency communication** between exactly **one producer and one consumer** goroutine:
@@ -177,9 +100,7 @@ grin uses several optimizations:
 
 ## Installation
 
-```bash
-go get github.com/andrewwormald/grin
-```
+`go get github.com/andrewwormald/grin`
 
 ## API
 
