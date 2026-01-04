@@ -2,7 +2,7 @@
   <img src="logo.png" alt="grin" width="120"/>
 </p>
 
-<h1 align="center">grin</h1>
+
 
 <p align="center">
 A Single Producer Single Consumer (SPSC) lock-free ring buffer for Go. Zero-allocation, zero-mutex, low-latency implementation for passing data between goroutines.
