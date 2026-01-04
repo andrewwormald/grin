@@ -7,7 +7,7 @@ import (
 	"github.com/andrewwormald/grin"
 )
 
-func BenchmarkCustomRingBuffer_Push(b *testing.B) {
+func BenchmarkGrin_Push(b *testing.B) {
 	buf := grin.New[int](1024)
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -24,7 +24,7 @@ func BenchmarkStdRing_Push(b *testing.B) {
 	}
 }
 
-func BenchmarkCustomRingBuffer_PushPop(b *testing.B) {
+func BenchmarkGrin_PushPop(b *testing.B) {
 	buf := grin.New[int](1024)
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -44,7 +44,7 @@ func BenchmarkStdRing_PushPop(b *testing.B) {
 	}
 }
 
-func BenchmarkCustomRingBuffer_Sequential(b *testing.B) {
+func BenchmarkGrin_Sequential(b *testing.B) {
 	buf := grin.New[int](256)
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -76,7 +76,7 @@ func BenchmarkStdRing_Sequential(b *testing.B) {
 	}
 }
 
-func BenchmarkCustomRingBuffer_Wraparound(b *testing.B) {
+func BenchmarkGrin_Wraparound(b *testing.B) {
 	buf := grin.New[int](64)
 	// Pre-fill to force wraparound
 	for i := 0; i < 32; i++ {
@@ -109,7 +109,7 @@ func BenchmarkStdRing_Wraparound(b *testing.B) {
 	}
 }
 
-func BenchmarkCustomRingBuffer_FillDrain(b *testing.B) {
+func BenchmarkGrin_FillDrain(b *testing.B) {
 	buf := grin.New[int](512)
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -143,7 +143,7 @@ func BenchmarkStdRing_FillDrain(b *testing.B) {
 	}
 }
 
-func BenchmarkCustomRingBuffer_LargeBuffer(b *testing.B) {
+func BenchmarkGrin_LargeBuffer(b *testing.B) {
 	buf := grin.New[int](4096)
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {

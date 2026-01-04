@@ -12,24 +12,24 @@ A Single Producer Single Consumer (SPSC) lock-free ring buffer for Go. Zero-allo
 
 ## Benchmark Results
 
-Benchmarks comparing grin SPSC ring buffer vs Go channels vs `container/ring`:
+Benchmarks comparing grin vs Go channels vs `container/ring`:
 
 ```
-BenchmarkCustomRingBuffer_Push-8          	555176442	    2.062 ns/op	       0 B/op	       0 allocs/op
-BenchmarkStdRing_Push-8                   	134874514	    9.021 ns/op	       8 B/op	       0 allocs/op
-BenchmarkChannel_Push-8                   	 15876997	   77.63 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGrin_Push-8             	552643833	    2.045 ns/op	       0 B/op	       0 allocs/op
+BenchmarkStdRing_Push-8          	132195036	    8.817 ns/op	       8 B/op	       0 allocs/op
+BenchmarkChannel_Push-8          	 16400854	   75.16 ns/op	       0 B/op	       0 allocs/op
 
-BenchmarkCustomRingBuffer_PushPop-8       	100000000	   10.91 ns/op	       0 B/op	       0 allocs/op
-BenchmarkStdRing_PushPop-8                	127008548	    9.548 ns/op	       8 B/op	       0 allocs/op
-BenchmarkChannel_PushPop-8                	 51626965	   23.44 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGrin_PushPop-8          	100000000	   10.76 ns/op	       0 B/op	       0 allocs/op
+BenchmarkStdRing_PushPop-8       	126589761	    8.967 ns/op	       8 B/op	       0 allocs/op
+BenchmarkChannel_PushPop-8       	 52360968	   22.60 ns/op	       0 B/op	       0 allocs/op
 
-BenchmarkCustomRingBuffer_Sequential-8    	  662056	    1887 ns/op	       0 B/op	       0 allocs/op
-BenchmarkStdRing_Sequential-8             	 2432874	     480.6 ns/op	       0 B/op	       0 allocs/op
-BenchmarkChannel_Sequential-8             	  403801	    3158 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGrin_Sequential-8       	  668730	    1834 ns/op	       0 B/op	       0 allocs/op
+BenchmarkStdRing_Sequential-8    	 2494608	     478.0 ns/op	       0 B/op	       0 allocs/op
+BenchmarkChannel_Sequential-8    	  406587	    3170 ns/op	       0 B/op	       0 allocs/op
 
-BenchmarkCustomRingBuffer_FillDrain-8     	  162046	    7672 ns/op	       0 B/op	       0 allocs/op
-BenchmarkStdRing_FillDrain-8              	  341188	    3697 ns/op	    2048 B/op	     256 allocs/op
-BenchmarkChannel_FillDrain-8              	  101307	   12377 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGrin_FillDrain-8        	  165178	    7372 ns/op	       0 B/op	       0 allocs/op
+BenchmarkStdRing_FillDrain-8     	  343904	    3674 ns/op	    2048 B/op	     256 allocs/op
+BenchmarkChannel_FillDrain-8     	  102903	   12073 ns/op	       0 B/op	       0 allocs/op
 ```
 
 **Key Takeaways:**
@@ -164,4 +164,4 @@ func New[T any](size int) RingBuffer[T]
 
 ## License
 
-MIT
+See [LICENSE](LICENSE) file for details.
