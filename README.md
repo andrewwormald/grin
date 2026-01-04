@@ -8,33 +8,33 @@ A Single Producer Single Consumer (SPSC) lock-free ring buffer for Go. Zero-allo
 - **Zero allocation**: No heap allocations during Push/Pop operations
 - **Cache-line optimized**: Prevents false sharing between producer and consumer
 - **Type-safe**: Generic implementation using Go generics
-- **High performance**: Up to 37x faster than channels for single-threaded operations
+- **High performance**: Up to 6x faster than channels for single-producer/single-consumer operations
 
 ## Benchmark Results
 
-Benchmarks comparing grin vs Go channels vs `container/ring`:
+Benchmarks comparing grin vs Go channels vs `container/ring` (Apple M1 Pro, Go 1.23):
 
 ```
-BenchmarkGrin_Push-8             	552643833	    2.045 ns/op	       0 B/op	       0 allocs/op
-BenchmarkStdRing_Push-8          	132195036	    8.817 ns/op	       8 B/op	       0 allocs/op
-BenchmarkChannel_Push-8          	 16400854	   75.16 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGrin_Push-8             	97138131	   11.96 ns/op	       0 B/op	       0 allocs/op
+BenchmarkStdRing_Push-8          	137294083	    8.800 ns/op	       8 B/op	       0 allocs/op
+BenchmarkChannel_Push-8          	16363477	   71.60 ns/op	       0 B/op	       0 allocs/op
 
-BenchmarkGrin_PushPop-8          	100000000	   10.76 ns/op	       0 B/op	       0 allocs/op
-BenchmarkStdRing_PushPop-8       	126589761	    8.967 ns/op	       8 B/op	       0 allocs/op
-BenchmarkChannel_PushPop-8       	 52360968	   22.60 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGrin_PushPop-8          	100000000	   10.58 ns/op	       0 B/op	       0 allocs/op
+BenchmarkStdRing_PushPop-8       	132342357	    9.282 ns/op	       8 B/op	       0 allocs/op
+BenchmarkChannel_PushPop-8       	52933585	   22.76 ns/op	       0 B/op	       0 allocs/op
 
-BenchmarkGrin_Sequential-8       	  668730	    1834 ns/op	       0 B/op	       0 allocs/op
-BenchmarkStdRing_Sequential-8    	 2494608	     478.0 ns/op	       0 B/op	       0 allocs/op
-BenchmarkChannel_Sequential-8    	  406587	    3170 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGrin_Sequential-8       	  659934	    1820 ns/op	       0 B/op	       0 allocs/op
+BenchmarkStdRing_Sequential-8    	 2572219	     465.9 ns/op	       0 B/op	       0 allocs/op
+BenchmarkChannel_Sequential-8    	  407391	    2957 ns/op	       0 B/op	       0 allocs/op
 
-BenchmarkGrin_FillDrain-8        	  165178	    7372 ns/op	       0 B/op	       0 allocs/op
-BenchmarkStdRing_FillDrain-8     	  343904	    3674 ns/op	    2048 B/op	     256 allocs/op
-BenchmarkChannel_FillDrain-8     	  102903	   12073 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGrin_FillDrain-8        	  164268	    7300 ns/op	       0 B/op	       0 allocs/op
+BenchmarkStdRing_FillDrain-8     	  345164	    3455 ns/op	    2048 B/op	     256 allocs/op
+BenchmarkChannel_FillDrain-8     	  101649	   11808 ns/op	       0 B/op	       0 allocs/op
 ```
 
 **Key Takeaways:**
-- **grin vs Channels**: 37x faster for Push, 2x faster for PushPop
-- **grin vs container/ring**: Faster for single operations, tracks buffer fullness
+- **grin vs Channels**: 6x faster for Push, 2x faster for PushPop, 1.6x faster for FillDrain
+- **grin vs container/ring**: Slower for sequential bulk operations (4x), but grin is concurrent-safe for SPSC and tracks buffer fullness. Different use cases—container/ring has no atomics overhead but isn't thread-safe.
 - **Zero allocations**: grin allocates nothing during operation, container/ring allocates on every value assignment
 
 ## Usage
@@ -44,6 +44,8 @@ package main
 
 import (
     "fmt"
+    "runtime"
+    "time"
 
     "github.com/andrewwormald/grin"
 )
@@ -52,11 +54,12 @@ func main() {
     // Create a ring buffer with capacity of 1024 (must be power of 2)
     buf := grin.New[int](1024)
 
-    // Producer goroutine
+    // Producer goroutine with backpressure handling
     go func() {
         for i := 0; i < 100; i++ {
             for !buf.Push(i) {
-                // Buffer full, wait/retry
+                // Buffer full - yield to scheduler instead of busy-wait
+                runtime.Gosched()
             }
         }
     }()
@@ -66,9 +69,48 @@ func main() {
         for {
             if val, ok := buf.Pop(); ok {
                 fmt.Println(val)
+            } else {
+                // Buffer empty - yield to scheduler
+                runtime.Gosched()
             }
         }
     }()
+}
+```
+
+### Backpressure Strategies
+
+When the buffer is full, avoid busy-waiting which wastes CPU cycles. Choose a strategy based on your latency requirements:
+
+```go
+// Strategy 1: Yield to scheduler (low CPU, microsecond latency)
+for !buf.Push(item) {
+    runtime.Gosched()
+}
+
+// Strategy 2: Exponential backoff (balanced approach)
+backoff := time.Nanosecond
+for !buf.Push(item) {
+    time.Sleep(backoff)
+    backoff = min(backoff*2, time.Millisecond)
+}
+
+// Strategy 3: Hybrid (spin briefly, then yield)
+attempts := 0
+for !buf.Push(item) {
+    if attempts < 100 {
+        // Spin for lowest latency
+        attempts++
+    } else {
+        // Yield after threshold
+        runtime.Gosched()
+    }
+}
+
+// Strategy 4: Drop or handle differently (for real-time systems)
+if !buf.Push(item) {
+    // Log drop, sample, or handle overflow
+    handleBackpressure(item)
 }
 ```
 
@@ -150,6 +192,15 @@ type RingBuffer[T any] interface {
     // Pop removes and returns an item from the buffer.
     // Returns (zero value, false) if buffer is empty (non-blocking).
     Pop() (T, bool)
+
+    // Cap returns the total capacity of the ring buffer.
+    Cap() int
+
+    // Len returns the current number of elements in the buffer.
+    Len() int
+
+    // Available returns the number of free slots in the buffer.
+    Available() int
 }
 
 // New creates a new ring buffer with the specified size.

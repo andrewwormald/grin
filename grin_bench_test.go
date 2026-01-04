@@ -11,7 +11,9 @@ func BenchmarkGrin_Push(b *testing.B) {
 	buf := grin.New[int](1024)
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		buf.Push(i)
+		for !buf.Push(i) {
+			buf.Pop()
+		}
 	}
 }
 
@@ -28,7 +30,9 @@ func BenchmarkGrin_PushPop(b *testing.B) {
 	buf := grin.New[int](1024)
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		buf.Push(i)
+		for !buf.Push(i % 1024) {
+			buf.Pop()
+		}
 		buf.Pop()
 	}
 }
@@ -48,11 +52,11 @@ func BenchmarkGrin_Sequential(b *testing.B) {
 	buf := grin.New[int](256)
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		// Fill half the buffer
 		for j := 0; j < 128; j++ {
-			buf.Push(j)
+			for !buf.Push(j) {
+				buf.Pop()
+			}
 		}
-		// Drain half the buffer
 		for j := 0; j < 128; j++ {
 			buf.Pop()
 		}
@@ -63,12 +67,10 @@ func BenchmarkStdRing_Sequential(b *testing.B) {
 	r := ring.New(256)
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		// Fill half the buffer
 		for j := 0; j < 128; j++ {
 			r.Value = j
 			r = r.Next()
 		}
-		// Drain half the buffer
 		for j := 0; j < 128; j++ {
 			_ = r.Value
 			r = r.Next()
@@ -78,7 +80,6 @@ func BenchmarkStdRing_Sequential(b *testing.B) {
 
 func BenchmarkGrin_Wraparound(b *testing.B) {
 	buf := grin.New[int](64)
-	// Pre-fill to force wraparound
 	for i := 0; i < 32; i++ {
 		buf.Push(i)
 	}
@@ -88,14 +89,15 @@ func BenchmarkGrin_Wraparound(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		buf.Push(i)
+		for !buf.Push(i) {
+			buf.Pop()
+		}
 		buf.Pop()
 	}
 }
 
 func BenchmarkStdRing_Wraparound(b *testing.B) {
 	r := ring.New(64)
-	// Pre-advance to simulate wraparound
 	for i := 0; i < 32; i++ {
 		r.Value = i
 		r = r.Next()
@@ -113,11 +115,11 @@ func BenchmarkGrin_FillDrain(b *testing.B) {
 	buf := grin.New[int](512)
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		// Fill completely
 		for j := 0; j < 512; j++ {
-			buf.Push(j)
+			for !buf.Push(j) {
+				buf.Pop()
+			}
 		}
-		// Drain completely
 		for j := 0; j < 512; j++ {
 			buf.Pop()
 		}
@@ -129,12 +131,10 @@ func BenchmarkStdRing_FillDrain(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		start := r
-		// Fill completely
 		for j := 0; j < 512; j++ {
 			r.Value = j
 			r = r.Next()
 		}
-		// Drain completely
 		r = start
 		for j := 0; j < 512; j++ {
 			_ = r.Value
@@ -147,7 +147,9 @@ func BenchmarkGrin_LargeBuffer(b *testing.B) {
 	buf := grin.New[int](4096)
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		buf.Push(i)
+		for !buf.Push(i) {
+			buf.Pop()
+		}
 		if i%2 == 0 {
 			buf.Pop()
 		}
@@ -170,7 +172,6 @@ func BenchmarkStdRing_LargeBuffer(b *testing.B) {
 
 func BenchmarkChannel_Push(b *testing.B) {
 	ch := make(chan int, 1024)
-	// Drain in background to prevent blocking
 	done := make(chan bool)
 	go func() {
 		for {
@@ -202,11 +203,9 @@ func BenchmarkChannel_Sequential(b *testing.B) {
 	ch := make(chan int, 256)
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		// Fill half the buffer
 		for j := 0; j < 128; j++ {
 			ch <- j
 		}
-		// Drain half the buffer
 		for j := 0; j < 128; j++ {
 			<-ch
 		}
@@ -215,7 +214,6 @@ func BenchmarkChannel_Sequential(b *testing.B) {
 
 func BenchmarkChannel_Wraparound(b *testing.B) {
 	ch := make(chan int, 64)
-	// Pre-fill to force wraparound
 	for i := 0; i < 32; i++ {
 		ch <- i
 	}
@@ -234,11 +232,9 @@ func BenchmarkChannel_FillDrain(b *testing.B) {
 	ch := make(chan int, 512)
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		// Fill completely
 		for j := 0; j < 512; j++ {
 			ch <- j
 		}
-		// Drain completely
 		for j := 0; j < 512; j++ {
 			<-ch
 		}
@@ -255,7 +251,6 @@ func BenchmarkChannel_LargeBuffer(b *testing.B) {
 		case ch <- i:
 			sent++
 		default:
-			// Channel full, skip
 		}
 		if i%2 == 0 && received < sent {
 			select {
