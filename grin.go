@@ -1,7 +1,6 @@
 package grin
 
 import (
-	"container/ring"
 	"sync/atomic"
 )
 
@@ -11,7 +10,6 @@ type RingBuffer[T any] interface {
 }
 
 func New[T any](size int) RingBuffer[T] {
-	ring.New()
 	if size&(size-1) != 0 {
 		panic("size must be power of two")
 	}

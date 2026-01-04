@@ -1,0 +1,24 @@
+goos: darwin
+goarch: arm64
+pkg: github.com/andrewwormald/grin
+cpu: Apple M1 Pro
+BenchmarkCustomRingBuffer_Push-8          	555176442	         2.062 ns/op	       0 B/op	       0 allocs/op
+BenchmarkStdRing_Push-8                   	134874514	         9.021 ns/op	       8 B/op	       0 allocs/op
+BenchmarkCustomRingBuffer_PushPop-8       	100000000	        10.91 ns/op	       0 B/op	       0 allocs/op
+BenchmarkStdRing_PushPop-8                	127008548	         9.548 ns/op	       8 B/op	       0 allocs/op
+BenchmarkCustomRingBuffer_Sequential-8    	  662056	      1887 ns/op	       0 B/op	       0 allocs/op
+BenchmarkStdRing_Sequential-8             	 2432874	       480.6 ns/op	       0 B/op	       0 allocs/op
+BenchmarkCustomRingBuffer_Wraparound-8    	100000000	        11.19 ns/op	       0 B/op	       0 allocs/op
+BenchmarkStdRing_Wraparound-8             	128098339	         9.048 ns/op	       8 B/op	       0 allocs/op
+BenchmarkCustomRingBuffer_FillDrain-8     	  162046	      7672 ns/op	       0 B/op	       0 allocs/op
+BenchmarkStdRing_FillDrain-8              	  341188	      3697 ns/op	    2048 B/op	     256 allocs/op
+BenchmarkCustomRingBuffer_LargeBuffer-8   	206049631	         6.029 ns/op	       0 B/op	       0 allocs/op
+BenchmarkStdRing_LargeBuffer-8            	100000000	        10.35 ns/op	       8 B/op	       0 allocs/op
+BenchmarkChannel_Push-8                   	15876997	        77.63 ns/op	       0 B/op	       0 allocs/op
+BenchmarkChannel_PushPop-8                	51626965	        23.44 ns/op	       0 B/op	       0 allocs/op
+BenchmarkChannel_Sequential-8             	  403801	      3158 ns/op	       0 B/op	       0 allocs/op
+BenchmarkChannel_Wraparound-8             	51587018	        24.09 ns/op	       0 B/op	       0 allocs/op
+BenchmarkChannel_FillDrain-8              	  101307	     12377 ns/op	       0 B/op	       0 allocs/op
+BenchmarkChannel_LargeBuffer-8            	89253061	        13.86 ns/op	       0 B/op	       0 allocs/op
+PASS
+ok  	github.com/andrewwormald/grin	26.038s

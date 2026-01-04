@@ -167,3 +167,102 @@ func BenchmarkStdRing_LargeBuffer(b *testing.B) {
 		}
 	}
 }
+
+func BenchmarkChannel_Push(b *testing.B) {
+	ch := make(chan int, 1024)
+	// Drain in background to prevent blocking
+	done := make(chan bool)
+	go func() {
+		for {
+			select {
+			case <-ch:
+			case <-done:
+				return
+			}
+		}
+	}()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		ch <- i
+	}
+	b.StopTimer()
+	close(done)
+}
+
+func BenchmarkChannel_PushPop(b *testing.B) {
+	ch := make(chan int, 1024)
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		ch <- i
+		<-ch
+	}
+}
+
+func BenchmarkChannel_Sequential(b *testing.B) {
+	ch := make(chan int, 256)
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		// Fill half the buffer
+		for j := 0; j < 128; j++ {
+			ch <- j
+		}
+		// Drain half the buffer
+		for j := 0; j < 128; j++ {
+			<-ch
+		}
+	}
+}
+
+func BenchmarkChannel_Wraparound(b *testing.B) {
+	ch := make(chan int, 64)
+	// Pre-fill to force wraparound
+	for i := 0; i < 32; i++ {
+		ch <- i
+	}
+	for i := 0; i < 32; i++ {
+		<-ch
+	}
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		ch <- i
+		<-ch
+	}
+}
+
+func BenchmarkChannel_FillDrain(b *testing.B) {
+	ch := make(chan int, 512)
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		// Fill completely
+		for j := 0; j < 512; j++ {
+			ch <- j
+		}
+		// Drain completely
+		for j := 0; j < 512; j++ {
+			<-ch
+		}
+	}
+}
+
+func BenchmarkChannel_LargeBuffer(b *testing.B) {
+	ch := make(chan int, 4096)
+	b.ResetTimer()
+	sent := 0
+	received := 0
+	for i := 0; i < b.N; i++ {
+		select {
+		case ch <- i:
+			sent++
+		default:
+			// Channel full, skip
+		}
+		if i%2 == 0 && received < sent {
+			select {
+			case <-ch:
+				received++
+			default:
+			}
+		}
+	}
+}
