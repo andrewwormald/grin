@@ -24,6 +24,7 @@ Lock-free ring buffers for Go: a Multi Producer Single Consumer (MPSC) queue (`g
 | --- | --- | --- |
 | `grin.New[T](size)` | MPSC (works for SPSC) | Default, lock-free many-to-one ring buffer; use for both single and multiple producers. |
 | `grin.NewManyToOne[T](size)` | MPSC | Explicit constructor mirroring Agrona's `ManyToOneConcurrentArrayQueue` (equivalent to `New`). |
+| `grin.NewSPSC[T](size)` | SPSC | Dedicated single-producer/single-consumer ring buffer; avoid producer-side contention costs. Unsafe with multiple producers. |
 
 ## Benchmark Results
 
@@ -156,12 +157,17 @@ func New[T any](size int) RingBuffer[T]
 // NewManyToOne creates a multi-producer, single-consumer ring buffer.
 // Size must be a power of 2, otherwise it panics.
 func NewManyToOne[T any](size int) *ManyToOne[T]
+
+// NewSPSC creates a single-producer, single-consumer ring buffer.
+// Size must be a power of 2, otherwise it panics.
+func NewSPSC[T any](size int) RingBuffer[T]
 ```
 
 ## Requirements
 
 - Buffer size must be a power of 2 (enforced by panic)
 - `New` / `NewManyToOne`: multiple producers, one consumer goroutine (safe for SPSC as a subset)
+- `NewSPSC`: exactly one producer and one consumer goroutine
 
 ## License
 

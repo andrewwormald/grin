@@ -24,6 +24,20 @@ func New[T any](size int) RingBuffer[T] {
 	return NewManyToOne[T](size)
 }
 
+// NewSPSC creates a single-producer, single-consumer ring buffer.
+// This variant avoids producer-side contention costs and can be faster
+// when exactly one producer and one consumer are present.
+func NewSPSC[T any](size int) RingBuffer[T] {
+	if size&(size-1) != 0 {
+		panic("size must be power of two")
+	}
+
+	return &ringBuffer[T]{
+		store: make([]T, size),
+		mask:  uint64(size) - 1,
+	}
+}
+
 type ringBuffer[T any] struct {
 	store []T
 	mask  uint64
