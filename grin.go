@@ -20,12 +20,14 @@ type RingBuffer[T any] interface {
 	Available() int
 }
 
+// New returns the multi-producer, single-consumer ring buffer (alias of NewManyToOne).
+// Size must be a power of 2, otherwise it panics.
 func New[T any](size int) RingBuffer[T] {
 	return NewManyToOne[T](size)
 }
 
 // NewSPSC creates a single-producer, single-consumer ring buffer.
-// This variant avoids producer-side contention costs and can be faster
+// This variant avoids producer-side contention costs and is only safe
 // when exactly one producer and one consumer are present.
 func NewSPSC[T any](size int) RingBuffer[T] {
 	if size&(size-1) != 0 {
@@ -41,13 +43,13 @@ func NewSPSC[T any](size int) RingBuffer[T] {
 type ringBuffer[T any] struct {
 	store []T
 	mask  uint64
-	_     [32]byte // Do not remove
+	_     [32]byte // Padding to keep head on a separate cache line
 
 	head uint64   // Owned by the consumer, producer must use atomic operations to read
-	_    [56]byte // Do not remove
+	_    [56]byte // Padding to avoid false sharing with tail
 
 	tail uint64   // Owned by the producer, consumer must use atomic operations to read
-	_    [56]byte // Do not remove
+	_    [56]byte // Padding to keep tail isolated
 }
 
 // Push adds an item to the ring buffer.
@@ -58,7 +60,7 @@ func (b *ringBuffer[T]) Push(t T) bool {
 	tail := b.tail
 	head := atomic.LoadUint64(&b.head)
 
-	// Dont overwrite existing data, reject new data until consumed
+	// Don't overwrite existing data; reject new data until consumed.
 	if tail-head == uint64(len(b.store)) {
 		return false
 	}
