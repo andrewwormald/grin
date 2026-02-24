@@ -2,6 +2,7 @@ package grin_test
 
 import (
 	"container/ring"
+	"runtime"
 	"testing"
 
 	"github.com/andrewwormald/grin"
@@ -15,6 +16,36 @@ func BenchmarkGrin_Push(b *testing.B) {
 			buf.Pop()
 		}
 	}
+}
+
+func BenchmarkManyToOne_PushParallel(b *testing.B) {
+	buf := grin.NewManyToOne[int](1024)
+	stop := make(chan struct{})
+
+	go func() {
+		for {
+			select {
+			case <-stop:
+				return
+			default:
+				if _, ok := buf.Pop(); !ok {
+					runtime.Gosched()
+				}
+			}
+		}
+	}()
+
+	b.ResetTimer()
+	b.RunParallel(func(pb *testing.PB) {
+		i := 0
+		for pb.Next() {
+			for !buf.Push(i) {
+				runtime.Gosched()
+			}
+			i++
+		}
+	})
+	close(stop)
 }
 
 func BenchmarkStdRing_Push(b *testing.B) {
