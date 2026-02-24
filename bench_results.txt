@@ -2,24 +2,24 @@ goos: linux
 goarch: amd64
 pkg: github.com/andrewwormald/grin
 cpu: AMD EPYC 7763 64-Core Processor
-BenchmarkGrin_Push-4                	166426032	         7.249 ns/op	       0 B/op	       0 allocs/op
-BenchmarkManyToOne_PushParallel-4   	51127701	        24.43 ns/op	       0 B/op	       0 allocs/op
-BenchmarkStdRing_Push-4             	85801380	        13.22 ns/op	       8 B/op	       0 allocs/op
-BenchmarkGrin_PushPop-4             	235495621	         5.139 ns/op	       0 B/op	       0 allocs/op
-BenchmarkStdRing_PushPop-4          	76851436	        13.69 ns/op	       8 B/op	       0 allocs/op
-BenchmarkGrin_Sequential-4          	 1614048	       744.1 ns/op	       0 B/op	       0 allocs/op
-BenchmarkStdRing_Sequential-4       	 2350016	       510.4 ns/op	       0 B/op	       0 allocs/op
-BenchmarkGrin_Wraparound-4          	233518587	         5.144 ns/op	       0 B/op	       0 allocs/op
-BenchmarkStdRing_Wraparound-4       	79932855	        13.12 ns/op	       0 B/op	       0 allocs/op
-BenchmarkGrin_FillDrain-4           	  404118	      3014 ns/op	       0 B/op	       0 allocs/op
-BenchmarkStdRing_FillDrain-4        	  228778	      5048 ns/op	    2048 B/op	     256 allocs/op
-BenchmarkGrin_LargeBuffer-4         	206543743	         5.820 ns/op	       0 B/op	       0 allocs/op
-BenchmarkStdRing_LargeBuffer-4      	76360908	        14.29 ns/op	       8 B/op	       0 allocs/op
-BenchmarkChannel_Push-4             	14023837	        85.89 ns/op	       0 B/op	       0 allocs/op
-BenchmarkChannel_PushPop-4          	38714640	        30.88 ns/op	       0 B/op	       0 allocs/op
-BenchmarkChannel_Sequential-4       	  291084	      3974 ns/op	       0 B/op	       0 allocs/op
-BenchmarkChannel_Wraparound-4       	39052872	        30.36 ns/op	       0 B/op	       0 allocs/op
-BenchmarkChannel_FillDrain-4        	   76225	     15661 ns/op	       0 B/op	       0 allocs/op
-BenchmarkChannel_LargeBuffer-4      	61520910	        19.32 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGrin_Push-4                	100000000	        13.02 ns/op	       0 B/op	       0 allocs/op
+BenchmarkManyToOne_PushParallel-4   	50053329	        22.46 ns/op	       0 B/op	       0 allocs/op
+BenchmarkStdRing_Push-4             	81319770	        13.37 ns/op	       8 B/op	       0 allocs/op
+BenchmarkGrin_PushPop-4             	151894257	         7.855 ns/op	       0 B/op	       0 allocs/op
+BenchmarkStdRing_PushPop-4          	75890983	        13.81 ns/op	       8 B/op	       0 allocs/op
+BenchmarkGrin_Sequential-4          	 1000000	      1045 ns/op	       0 B/op	       0 allocs/op
+BenchmarkStdRing_Sequential-4       	 2346562	       511.7 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGrin_Wraparound-4          	153755425	         7.798 ns/op	       0 B/op	       0 allocs/op
+BenchmarkStdRing_Wraparound-4       	80600635	        13.33 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGrin_FillDrain-4           	  291121	      4102 ns/op	       0 B/op	       0 allocs/op
+BenchmarkStdRing_FillDrain-4        	  242001	      4792 ns/op	    2048 B/op	     256 allocs/op
+BenchmarkGrin_LargeBuffer-4         	129018440	         9.496 ns/op	       0 B/op	       0 allocs/op
+BenchmarkStdRing_LargeBuffer-4      	74436589	        15.11 ns/op	       8 B/op	       0 allocs/op
+BenchmarkChannel_Push-4             	14334135	        86.12 ns/op	       0 B/op	       0 allocs/op
+BenchmarkChannel_PushPop-4          	38811052	        30.63 ns/op	       0 B/op	       0 allocs/op
+BenchmarkChannel_Sequential-4       	  302374	      3966 ns/op	       0 B/op	       0 allocs/op
+BenchmarkChannel_Wraparound-4       	38792599	        30.52 ns/op	       0 B/op	       0 allocs/op
+BenchmarkChannel_FillDrain-4        	   76681	     15693 ns/op	       0 B/op	       0 allocs/op
+BenchmarkChannel_LargeBuffer-4      	61509349	        19.29 ns/op	       0 B/op	       0 allocs/op
 PASS
-ok  	github.com/andrewwormald/grin	28.596s
+ok  	github.com/andrewwormald/grin	27.929s

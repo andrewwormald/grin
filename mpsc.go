@@ -76,7 +76,8 @@ func (b *ManyToOne[T]) Push(v T) bool {
 // Pop removes and returns the next item.
 // Returns (zero, false) if the buffer is empty.
 func (b *ManyToOne[T]) Pop() (T, bool) {
-	head := atomic.LoadUint64(&b.head)
+	// head is owned by the consumer; no atomic load required.
+	head := b.head
 	slot := &b.slots[head&b.mask]
 
 	seq := atomic.LoadUint64(&slot.seq)
@@ -87,7 +88,7 @@ func (b *ManyToOne[T]) Pop() (T, bool) {
 
 	val := slot.val
 	atomic.StoreUint64(&slot.seq, head+uint64(len(b.slots)))
-	atomic.StoreUint64(&b.head, head+1)
+	b.head = head + 1
 	return val, true
 }
 
