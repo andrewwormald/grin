@@ -64,3 +64,39 @@ func TestManyToOne_ConcurrentProducers(t *testing.T) {
 		t.Fatalf("got %d results, want %d", len(results), producers*perProducer)
 	}
 }
+
+func TestNew_ConcurrentProducers(t *testing.T) {
+	const producers = 3
+	const perProducer = 200
+	buf := grin.New[int](256)
+
+	var wg sync.WaitGroup
+	wg.Add(producers)
+
+	for p := 0; p < producers; p++ {
+		offset := p * 1000
+		go func(start int) {
+			defer wg.Done()
+			for i := 0; i < perProducer; i++ {
+				val := start + i
+				for !buf.Push(val) {
+					runtime.Gosched()
+				}
+			}
+		}(offset)
+	}
+
+	seen := make(map[int]bool, producers*perProducer)
+	for len(seen) < producers*perProducer {
+		if v, ok := buf.Pop(); ok {
+			if seen[v] {
+				t.Fatalf("duplicate %d", v)
+			}
+			seen[v] = true
+		} else {
+			runtime.Gosched()
+		}
+	}
+
+	wg.Wait()
+}

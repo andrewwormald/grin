@@ -5,7 +5,7 @@
 
 
 <p align="center">
-Lock-free ring buffers for Go: a Single Producer Single Consumer (SPSC) queue (`grin.New`) and a Multi Producer Single Consumer (MPSC) queue (`grin.NewManyToOne`). Zero-allocation, zero-mutex, low-latency communication between goroutines.
+Lock-free ring buffers for Go: a Multi Producer Single Consumer (MPSC) queue (`grin.New`, `grin.NewManyToOne`) that also covers SPSC cases. Zero-allocation, zero-mutex, low-latency communication between goroutines.
 </p>
 
 ## Features
@@ -15,14 +15,14 @@ Lock-free ring buffers for Go: a Single Producer Single Consumer (SPSC) queue (`
 - **Cache-line optimized**: Prevents false sharing between producer and consumer
 - **Type-safe**: Generic implementation using Go generics
 - **High performance**: Up to 6x faster than channels for single-producer/single-consumer operations
-- **Two flavors**: SPSC ring buffer (`New`) and MPSC ring buffer (`NewManyToOne`)
+- **MPSC-first**: Default constructor is MPSC but works for SPSC without code changes
 
 ## Ring Buffer Options
 
 | Constructor | Pattern | Description |
 | --- | --- | --- |
-| `grin.New[T](size)` | SPSC | Highest throughput when exactly one producer and one consumer. |
-| `grin.NewManyToOne[T](size)` | MPSC | Many producers with a single consumer, similar to Agrona's `ManyToOneConcurrentArrayQueue`. |
+| `grin.New[T](size)` | MPSC (works for SPSC) | Default, lock-free many-to-one ring buffer; use for both single and multiple producers. |
+| `grin.NewManyToOne[T](size)` | MPSC | Explicit constructor mirroring Agrona's `ManyToOneConcurrentArrayQueue` (equivalent to `New`). |
 
 ## Benchmark Results
 
@@ -160,8 +160,7 @@ func NewManyToOne[T any](size int) *ManyToOne[T]
 ## Requirements
 
 - Buffer size must be a power of 2 (enforced by panic)
-- `New`: exactly one producer goroutine and one consumer goroutine (not safe for multiple producers)
-- `NewManyToOne`: multiple producers, one consumer goroutine
+- `New` / `NewManyToOne`: multiple producers, one consumer goroutine (safe for SPSC as a subset)
 
 ## License
 

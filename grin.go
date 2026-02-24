@@ -21,14 +21,7 @@ type RingBuffer[T any] interface {
 }
 
 func New[T any](size int) RingBuffer[T] {
-	if size&(size-1) != 0 {
-		panic("size must be power of two")
-	}
-
-	return &ringBuffer[T]{
-		store: make([]T, size),
-		mask:  uint64(size) - 1,
-	}
+	return NewManyToOne[T](size)
 }
 
 type ringBuffer[T any] struct {
