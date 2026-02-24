@@ -160,7 +160,7 @@ func NewManyToOne[T any](size int) *ManyToOne[T]
 ## Requirements
 
 - Buffer size must be a power of 2 (enforced by panic)
-- `New`: exactly one producer goroutine and one consumer goroutine
+- `New`: exactly one producer goroutine and one consumer goroutine (not safe for multiple producers)
 - `NewManyToOne`: multiple producers, one consumer goroutine
 
 ## License
