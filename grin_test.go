@@ -17,6 +17,29 @@ func TestNew(t *testing.T) {
 	}
 }
 
+func TestNewSPSC(t *testing.T) {
+	buf := grin.NewSPSC[int](8)
+	if buf == nil {
+		t.Fatal("NewSPSC() returned nil")
+	}
+
+	if !buf.Push(1) {
+		t.Fatal("NewSPSC Push failed")
+	}
+	if v, ok := buf.Pop(); !ok || v != 1 {
+		t.Fatalf("NewSPSC Pop = (%d,%v), want (1,true)", v, ok)
+	}
+}
+
+func TestNewSPSCPowerOfTwo(t *testing.T) {
+	defer func() {
+		if r := recover(); r == nil {
+			t.Fatal("NewSPSC should panic on non-power-of-two size")
+		}
+	}()
+	grin.NewSPSC[int](10)
+}
+
 func TestPushPop(t *testing.T) {
 	buf := grin.New[int](8)
 

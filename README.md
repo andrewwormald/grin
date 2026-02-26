@@ -5,7 +5,7 @@
 
 
 <p align="center">
-A Single Producer Single Consumer (SPSC) lock-free ring buffer for Go. Zero-allocation, zero-mutex, low-latency implementation for passing data between goroutines.
+Lock-free ring buffers for Go: a Multi Producer Single Consumer (MPSC) queue (`grin.New`, `grin.NewManyToOne`) that also covers SPSC cases. Zero-allocation, zero-mutex, low-latency communication between goroutines.
 </p>
 
 ## Features
@@ -15,33 +15,55 @@ A Single Producer Single Consumer (SPSC) lock-free ring buffer for Go. Zero-allo
 - **Cache-line optimized**: Prevents false sharing between producer and consumer
 - **Type-safe**: Generic implementation using Go generics
 - **High performance**: Up to 6x faster than channels for single-producer/single-consumer operations
+- **MPSC-first**: Default constructor is MPSC but works for SPSC without code changes
+- **Hot-path trimmed**: Consumer no longer pays atomic overhead on its head pointer for faster pops
+
+## Ring Buffer Options
+
+| Constructor | Pattern | Description |
+| --- | --- | --- |
+| `grin.New[T](size)` | MPSC (works for SPSC) | Default, lock-free many-to-one ring buffer; use for both single and multiple producers. |
+| `grin.NewManyToOne[T](size)` | MPSC | Explicit constructor mirroring Agrona's `ManyToOneConcurrentArrayQueue` (alias of `New`). |
+| `grin.NewSPSC[T](size)` | SPSC | Dedicated single-producer/single-consumer ring buffer; avoid producer-side contention costs. Unsafe with multiple producers. |
+
+`New` and `NewManyToOne` return the same MPSC implementation; pick whichever name reads best in your code.
 
 ## Benchmark Results
 
-Benchmarks comparing grin vs Go channels vs `container/ring` (Apple M1 Pro, Go 1.25.5):
+Benchmarks comparing grin (SPSC + MPSC) vs Go channels vs `container/ring` (AMD EPYC 7763, Go 1.25.5):
 
 ```
-BenchmarkGrin_Push-8             	97138131	   11.96 ns/op	       0 B/op	       0 allocs/op
-BenchmarkStdRing_Push-8          	137294083	    8.800 ns/op	       8 B/op	       0 allocs/op
-BenchmarkChannel_Push-8          	16363477	   71.60 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGrin_Push-4                	100000000	        13.02 ns/op	       0 B/op	       0 allocs/op
+BenchmarkManyToOne_PushParallel-4   	50053329	        22.46 ns/op	       0 B/op	       0 allocs/op
+BenchmarkStdRing_Push-4             	81319770	        13.37 ns/op	       8 B/op	       0 allocs/op
 
-BenchmarkGrin_PushPop-8          	100000000	   10.58 ns/op	       0 B/op	       0 allocs/op
-BenchmarkStdRing_PushPop-8       	132342357	    9.282 ns/op	       8 B/op	       0 allocs/op
-BenchmarkChannel_PushPop-8       	52933585	   22.76 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGrin_PushPop-4             	151894257	         7.855 ns/op	       0 B/op	       0 allocs/op
+BenchmarkStdRing_PushPop-4          	75890983	        13.81 ns/op	       8 B/op	       0 allocs/op
 
-BenchmarkGrin_Sequential-8       	  659934	    1820 ns/op	       0 B/op	       0 allocs/op
-BenchmarkStdRing_Sequential-8    	 2572219	     465.9 ns/op	       0 B/op	       0 allocs/op
-BenchmarkChannel_Sequential-8    	  407391	    2957 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGrin_Sequential-4          	 1000000	      1045 ns/op	       0 B/op	       0 allocs/op
+BenchmarkStdRing_Sequential-4       	 2346562	       511.7 ns/op	       0 B/op	       0 allocs/op
 
-BenchmarkGrin_FillDrain-8        	  164268	    7300 ns/op	       0 B/op	       0 allocs/op
-BenchmarkStdRing_FillDrain-8     	  345164	    3455 ns/op	    2048 B/op	     256 allocs/op
-BenchmarkChannel_FillDrain-8     	  101649	   11808 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGrin_Wraparound-4          	153755425	         7.798 ns/op	       0 B/op	       0 allocs/op
+BenchmarkStdRing_Wraparound-4       	80600635	        13.33 ns/op	       0 B/op	       0 allocs/op
+
+BenchmarkGrin_FillDrain-4           	  291121	      4102 ns/op	       0 B/op	       0 allocs/op
+BenchmarkStdRing_FillDrain-4        	  242001	      4792 ns/op	    2048 B/op	     256 allocs/op
+
+BenchmarkGrin_LargeBuffer-4         	129018440	         9.496 ns/op	       0 B/op	       0 allocs/op
+BenchmarkStdRing_LargeBuffer-4      	74436589	        15.11 ns/op	       8 B/op	       0 allocs/op
+
+BenchmarkChannel_Push-4             	14334135	        86.12 ns/op	       0 B/op	       0 allocs/op
+BenchmarkChannel_PushPop-4          	38811052	        30.63 ns/op	       0 B/op	       0 allocs/op
+BenchmarkChannel_Sequential-4       	  302374	      3966 ns/op	       0 B/op	       0 allocs/op
+BenchmarkChannel_Wraparound-4       	38792599	        30.52 ns/op	       0 B/op	       0 allocs/op
+BenchmarkChannel_FillDrain-4        	   76681	     15693 ns/op	       0 B/op	       0 allocs/op
+BenchmarkChannel_LargeBuffer-4      	61509349	        19.29 ns/op	       0 B/op	       0 allocs/op
 ```
 
 **Key Takeaways:**
-- **grin vs Channels**: 6x faster for Push, 2x faster for PushPop, 1.6x faster for FillDrain
-- **grin vs container/ring**: Slower for sequential bulk operations (4x), but grin is concurrent-safe for SPSC and tracks buffer fullness. Different use cases—container/ring has no atomics overhead but isn't thread-safe.
-- **Zero allocations**: grin allocates nothing during operation, container/ring allocates on every value assignment
+- **grin (MPSC covering SPSC)**: Remains materially faster than channels for Push/PushPop while supporting multiple producers; absolute ns/op is higher than the earlier SPSC-only variant.
+- **grin (MPSC)**: Lock-free many-producer support with zero allocations; consumer-side atomic removed to trim pop latency.
+- **grin vs container/ring**: grin stays allocation-free and thread-safe; `container/ring` is not concurrent-safe and allocates on writes.
 
 ## When to Use SPSC Ring Buffers (grin)
 
@@ -133,13 +155,21 @@ type RingBuffer[T any] interface {
 // New creates a new ring buffer with the specified size.
 // Size must be a power of 2, otherwise it panics.
 func New[T any](size int) RingBuffer[T]
+
+// NewManyToOne creates a multi-producer, single-consumer ring buffer.
+// Size must be a power of 2, otherwise it panics.
+func NewManyToOne[T any](size int) *ManyToOne[T]
+
+// NewSPSC creates a single-producer, single-consumer ring buffer.
+// Size must be a power of 2, otherwise it panics.
+func NewSPSC[T any](size int) RingBuffer[T]
 ```
 
 ## Requirements
 
 - Buffer size must be a power of 2 (enforced by panic)
-- Single producer goroutine only
-- Single consumer goroutine only
+- `New` / `NewManyToOne`: multiple producers, one consumer goroutine (safe for SPSC as a subset)
+- `NewSPSC`: exactly one producer and one consumer goroutine
 
 ## License
 
